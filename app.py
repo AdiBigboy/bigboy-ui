@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(page_title="BigBoy FX Dashboard", layout="wide")
 st.title("📈 BigBoy Live Forex Dashboard")
 
-sheet_id = "1pZ10U5hvZRFXLLfhKxo6V8SsuajH6Yygi47NJsrI9HU"
+sheet_id = "1abOo_P076bgURio56_5EEd3WCcwkoNuYk4bWwV69Azg"
 sheet_name = "LIVE_FEED"
 csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
 
