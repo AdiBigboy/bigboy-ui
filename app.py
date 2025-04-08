@@ -1,75 +1,67 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-import time
 
-st.set_page_config(page_title="BigBoy FX Dashboard", layout="wide")
+# Set default theme
+st.set_page_config(page_title="BigBoy FX V2", layout="wide")
 
-# Dark theme header
-st.markdown("""
-    <style>
-    body, .stApp {
-        background-color: #111111;
-        color: #e1e1e1;
-    }
-    .css-1d391kg {
-        color: white;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Theme toggle
+theme = st.sidebar.radio("🎨 Theme", ["🌙 Dark Mode", "☀️ Light Mode"])
 
-st.markdown("<h1 style='text-align: center; color:#00ffcc;'>📈 BigBoy Live Forex Dashboard</h1>", unsafe_allow_html=True)
+if theme == "🌙 Dark Mode":
+    st.markdown("""
+        <style>
+        body, .stApp {
+            background-color: #0f0f0f;
+            color: #e1e1e1;
+        }
+        .css-1d391kg {
+            color: white;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <style>
+        body, .stApp {
+            background-color: #ffffff;
+            color: #111111;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-# Auto-refresh interval (in seconds)
-REFRESH_INTERVAL = 60
-st.markdown(f"<div style='text-align:right; font-size: 0.9em;'>🔄 Auto-refresh every {REFRESH_INTERVAL} seconds</div>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='text-align:center;'>📊 BigBoy FX V2 – Live Dashboard</h1>", unsafe_allow_html=True)
 
-# Load from Google Sheet CSV export
+# Live data section
 sheet_id = "1abOo_P076bgURio56_5EEd3WCcwkoNuYk4bWwV69Azg"
-sheet_name = "LIVE_FEED"
-csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+csv_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=LIVE_FEED"
 
 try:
     df = pd.read_csv(csv_url)
 
-    # Optional signal flag logic (demo)
-    signal_flags = []
-    for index, row in df.iterrows():
-        price = float(row["PRICE"])
-        if "JPY" in row["PAIR"] and price > 150:
-            signal_flags.append("⚠️ High JPY Zone")
-        elif "USD" in row["PAIR"] and price < 1:
-            signal_flags.append("🔻 Below Parity")
-        else:
-            signal_flags.append("✅ Stable")
+    # Watchlist Selector
+    section = st.sidebar.selectbox("📌 Watchlist", ["All", "USD Majors", "JPY Pairs"])
 
-    df["SIGNAL"] = signal_flags
+    if section == "USD Majors":
+        df = df[df["PAIR"].str.contains("USD")]
+    elif section == "JPY Pairs":
+        df = df[df["PAIR"].str.contains("JPY")]
 
-    # Format and display
-    st.success("✅ Live data loaded successfully!")
+    st.dataframe(df, use_container_width=True)
 
-    def color_signal(val):
-        if "⚠️" in val:
-            return "background-color: #331111; color: #ff4444"
-        elif "🔻" in val:
-            return "background-color: #333300; color: #ffff66"
-        elif "✅" in val:
-            return "background-color: #112211; color: #66ff66"
-        return ""
-
-    df_display = df.style.applymap(color_signal, subset=["SIGNAL"])
-
-    st.dataframe(df_display, use_container_width=True)
-
-    # Last updated info
-    last_update = df["UPDATED_TIME"].max()
-    st.markdown(f"<div style='text-align:right; font-size: 0.9em;'>⏱ Last Updated: {last_update}</div>", unsafe_allow_html=True)
-
-    # Refresh delay
-    time.sleep(REFRESH_INTERVAL)
-    st.experimental_rerun()
+    st.markdown(f"<div style='text-align:right; font-size: 0.9em;'>⏱ Updated: {df['UPDATED_TIME'].max()}</div>", unsafe_allow_html=True)
 
 except Exception as e:
     st.error("❌ Failed to load data.")
     st.text(str(e))
+
+# TradingView embed
+st.markdown("---")
+st.subheader("📈 TradingView Live Chart")
+
+pair = st.selectbox("Select Pair", ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY"])
+tv_code = f'''
+<iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_{pair}&symbol=FX:{pair}&interval=60&hidesidetoolbar=1&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=[]&theme={'dark' if 'Dark' in theme else 'light'}&style=1&timezone=Etc/UTC&withdateranges=1&hideideas=1" 
+width="100%" height="450" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
+'''
+st.components.v1.html(tv_code, height=450)
